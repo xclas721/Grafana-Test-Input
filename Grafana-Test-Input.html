@@ -736,7 +736,7 @@
                 <input
                   type="text"
                   id="issuerOid"
-                  value="89eda8a5-12e0-848f-e0a3-d974104a3914"
+                  value="ed8544c4-fc50-289d-ee05-ee41c86bb6f5"
                   required
                 />
               </div>
@@ -2515,11 +2515,22 @@
           }
 
           // 為每筆數據生成一次 Mastercard 擴展數據
-          const mastercardData =
-            baseFormData.enableMastercardExtension === 'on' &&
-            baseFormData.enableMastercardExtensionRandom === 'on'
-              ? generateRandomMastercardExtension()
-              : { score: 600, decision: 'Not Low Risk' }
+          let mastercardData = null
+          
+          // 檢查是否啟用 Mastercard 擴展
+          if (baseFormData.enableMastercardExtension === 'on') {
+            // 如果啟用了隨機生成，則生成隨機數據
+            if (baseFormData.enableMastercardExtensionRandom === 'on') {
+              mastercardData = generateRandomMastercardExtension()
+            } else {
+              // 如果沒有啟用隨機生成，則使用表單中的預設值
+              mastercardData = {
+                score: parseInt(baseFormData.mastercardScore) || 600,
+                decision: baseFormData.mastercardDecision || 'Not Low Risk'
+              }
+            }
+          }
+          // 如果沒有啟用 Mastercard 擴展，mastercardData 保持為 null
 
           const template = {
             acsTransId: generateUUID(),
@@ -2535,8 +2546,8 @@
             acquirerMerchantId: merchantId,
             visaRiskBasedAuthenticationScore:
               baseFormData.enableVisaScoreRandom === 'on' ? generateRealisticVisaScore() : '',
-            mastercardScore: mastercardData.score,
-            mastercardDecision: mastercardData.decision,
+            mastercardScore: mastercardData ? mastercardData.score : null,
+            mastercardDecision: mastercardData ? mastercardData.decision : null,
             // 卡號相關欄位
             acctNumberHashed: cardData.acctNumberHashed,
             acctNumberMask: cardData.acctNumberMask,
@@ -2803,7 +2814,12 @@
           const mergedData = { ...formData, ...template }
 
           // 如果模板中有 Mastercard 數據，需要重新構建 mastercardMessageExtension
-          if (template.mastercardScore !== undefined && template.mastercardDecision !== undefined) {
+          if (
+            template.mastercardScore !== undefined &&
+            template.mastercardScore !== null &&
+            template.mastercardDecision !== undefined &&
+            template.mastercardDecision !== null
+          ) {
             const enableMastercardExtension = formData.enableMastercardExtension === 'on'
             if (enableMastercardExtension) {
               const mastercardExtension = {
@@ -2817,6 +2833,9 @@
             } else {
               mergedData.mastercardMessageExtension = 'null'
             }
+          } else {
+            // 如果沒有 Mastercard 數據，設為 null
+            mergedData.mastercardMessageExtension = 'null'
           }
 
           if (mode === 'unified') {
@@ -3325,11 +3344,9 @@
         // 初始化 Mastercard 訊息擴展容器顯示狀態
         const enableMastercardExtension = document.getElementById('enableMastercardExtension')
         const container = document.getElementById('mastercardExtensionContainer')
-        if (enableMastercardExtension.checked) {
-          container.style.display = 'block'
-        } else {
-          container.style.display = 'none'
-        }
+        // 預設關閉 Mastercard 擴展
+        enableMastercardExtension.checked = false
+        container.style.display = 'none'
 
         // 初始化卡片組織強制設置邏輯
         handleVisaScoreToggle()
@@ -3502,13 +3519,16 @@
 
         // 卡片組織擴展
         document.getElementById('visaDafMessageExtension').value = 'null'
-        document.getElementById('enableMastercardExtension').checked = true
+        document.getElementById('enableMastercardExtension').checked = false
         document.getElementById('mastercardScore').value = '600'
         document.getElementById('mastercardDecision').value = 'Not Low Risk'
         document.getElementById('mastercardReasonCode1').value = 'A'
         document.getElementById('mastercardReasonCode2').value = ''
         document.getElementById('mastercardStatus').value = 'success'
         document.getElementById('visaRiskBasedAuthenticationScore').value = ''
+        
+        // 更新 Mastercard 擴展容器顯示狀態
+        document.getElementById('mastercardExtensionContainer').style.display = 'none'
 
         showStatus('預設值已載入 (基於 HiTRUST demo-web 項目)', 'success')
       }
@@ -3640,12 +3660,7 @@
           if (input.type === 'date') {
             input.value = new Date().toISOString().split('T')[0]
           } else if (input.type === 'checkbox') {
-            // 保持 Mastercard 擴展開關為啟用狀態
-            if (input.id === 'enableMastercardExtension') {
-              input.checked = true
-            } else {
-              input.checked = false
-            }
+            input.checked = false
           } else {
             input.value = ''
           }
@@ -3653,9 +3668,9 @@
         // 清空 acctNumber 後，其他相關欄位也會自動清空
         updateCardInfoFromAcctNumber()
 
-        // 確保 Mastercard 擴展容器顯示
+        // 確保 Mastercard 擴展容器隱藏
         const container = document.getElementById('mastercardExtensionContainer')
-        container.style.display = 'block'
+        container.style.display = 'none'
 
         showStatus('所有欄位已清空', 'success')
       }
@@ -3690,7 +3705,12 @@
         inputs.forEach((input) => {
           // 排除 acctNumber 欄位，因為它不會被 POST 出去
           if (input.id !== 'acctNumber') {
-            formData[input.id] = input.value
+            // checkbox 需要讀取 checked 屬性，轉換為 'on' 或 'off'
+            if (input.type === 'checkbox') {
+              formData[input.id] = input.checked ? 'on' : 'off'
+            } else {
+              formData[input.id] = input.value
+            }
           }
         })
 
