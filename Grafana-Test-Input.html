@@ -2532,15 +2532,40 @@
           }
           // 如果沒有啟用 Mastercard 擴展，mastercardData 保持為 null
 
+          const aresStatus = generateRealisticStatus()
+          let rreqStatus = 'NULL_VALUE'
+          let transStatus = aresStatus
+          
+          // 根據業務規則設置相關欄位
+          if (['C', 'D'].includes(aresStatus)) {
+            // 挑戰認證流程：有 rreq 結果，且 transStatus = rreq 結果
+            rreqStatus = Math.random() < 0.8 ? 'Y' : 'N'
+            transStatus = rreqStatus  // 最終狀態 = 挑戰結果
+          } else {
+            // 無摩擦認證流程：無 rreq，transStatus = ares 狀態
+            rreqStatus = 'NULL_VALUE'
+            transStatus = aresStatus
+          }
+
+          let transStatusReason = 'NULL_VALUE'
+          if (aresStatus === 'R') {
+            const reasons = []
+            for (let j = 1; j <= 30; j++) {
+              reasons.push(j.toString().padStart(2, '0'))
+            }
+            reasons.push('81', '89', '90')
+            transStatusReason = reasons[Math.floor(Math.random() * reasons.length)]
+          }
+
           const template = {
             acsTransId: generateUUID(),
             threeDSServerTransId: generateUUID().toLowerCase(),
             purchaseAmount: generateRealisticPurchaseAmount(),
             execTime: generateRealisticExecTime(),
-            aresTransStatus: generateRealisticStatus(),
-            transStatus: '', // 會在後面設置
-            rreqTransStatus: 'NULL_VALUE', // 預設值
-            transStatusReason: 'NULL_VALUE', // 預設值
+            aresTransStatus: aresStatus,
+            transStatus: transStatus,
+            rreqTransStatus: rreqStatus,
+            transStatusReason: transStatusReason,
             messageCategory: generateRealisticMessageCategory(),
             deviceChannel: generateRealisticDeviceChannel(),
             acquirerMerchantId: merchantId,
@@ -2555,23 +2580,6 @@
             cardbin8: cardData.cardbin8
           }
 
-          // 根據業務規則設置相關欄位
-          if (['Y', 'N', 'R', 'A', 'I', 'S', 'U'].includes(template.aresTransStatus)) {
-            template.rreqTransStatus = 'NULL_VALUE'
-          } else if (['C', 'D'].includes(template.aresTransStatus)) {
-            template.rreqTransStatus = Math.random() < 0.8 ? 'Y' : 'N'
-          }
-
-          if (template.aresTransStatus === 'R') {
-            const reasons = []
-            for (let j = 1; j <= 30; j++) {
-              reasons.push(j.toString().padStart(2, '0'))
-            }
-            reasons.push('81', '89', '90')
-            template.transStatusReason = reasons[Math.floor(Math.random() * reasons.length)]
-          }
-
-          template.transStatus = template.aresTransStatus
           templates.push(template)
         }
         return templates
@@ -3265,7 +3273,6 @@
         // 設定交易狀態聯動
         document.getElementById('aresTransStatus').addEventListener('change', function () {
           const aresStatus = this.value
-          document.getElementById('transStatus').value = aresStatus
 
           // 控制 rreq_transStatus 欄位的啟用/禁用
           const rreqTransStatusSelect = document.getElementById('rreqTransStatus')
@@ -3276,10 +3283,14 @@
             if (rreqTransStatusSelect.value === 'NULL_VALUE') {
               rreqTransStatusSelect.value = 'Y'
             }
+            // C/D 時，transStatus 應該等於 rreq_transStatus（挑戰認證結果）
+            document.getElementById('transStatus').value = rreqTransStatusSelect.value
           } else {
             // 當 ARes 狀態為其他值時，禁用 rreq_transStatus 欄位並設為 NULL_VALUE
             rreqTransStatusSelect.disabled = true
             rreqTransStatusSelect.value = 'NULL_VALUE'
+            // 其他情況，transStatus 等於 ares_transStatus（無摩擦認證）
+            document.getElementById('transStatus').value = aresStatus
           }
 
           // 控制 transStatusReason 欄位的啟用/禁用
@@ -3295,6 +3306,15 @@
             // 當 ARes 狀態為其他值時，禁用 transStatusReason 欄位並設為 NULL_VALUE
             transStatusReasonSelect.disabled = true
             transStatusReasonSelect.value = 'NULL_VALUE'
+          }
+        })
+
+        // 設定 rreq_transStatus 變更事件監聽器
+        document.getElementById('rreqTransStatus').addEventListener('change', function () {
+          const aresStatus = document.getElementById('aresTransStatus').value
+          if (['C', 'D'].includes(aresStatus)) {
+            // 當 ares 為 C/D 時，transStatus 應該跟隨 rreq_transStatus 變化
+            document.getElementById('transStatus').value = this.value
           }
         })
 
@@ -3566,7 +3586,18 @@
         const statuses = ['Y', 'N', 'C', 'D', 'R', 'A', 'I', 'S', 'U']
         const randomStatus = statuses[Math.floor(Math.random() * statuses.length)]
         document.getElementById('aresTransStatus').value = randomStatus
-        document.getElementById('transStatus').value = randomStatus
+        
+        // transStatus 的值取決於 ares_transStatus
+        if (['C', 'D'].includes(randomStatus)) {
+          // C/D 時，會有 rreq_transStatus，且 transStatus = rreq_transStatus
+          const randomRreqStatus = Math.random() < 0.8 ? 'Y' : 'N'
+          document.getElementById('rreqTransStatus').value = randomRreqStatus
+          document.getElementById('transStatus').value = randomRreqStatus
+        } else {
+          // 其他情況，transStatus = ares_transStatus
+          document.getElementById('rreqTransStatus').value = 'NULL_VALUE'
+          document.getElementById('transStatus').value = randomStatus
+        }
 
         // 隨機 messageCategory - 只有勾選時才隨機生成
         const enableMessageCategoryRandom = document.getElementById('enableMessageCategory').checked
@@ -3595,15 +3626,6 @@
           document.getElementById('acquirerMerchantId').value = randomAcquirerMerchantId.toString()
         }
 
-        // 根據業務規則設置 rreq_transStatus
-        if (['Y', 'N', 'R', 'A', 'I', 'S', 'U'].includes(randomStatus)) {
-          // ares_transStatus 是 'Y', 'N', 'R', 'A', 'I', 'S', 'U' 時，rreq_transStatus 是 NULL_VALUE
-          document.getElementById('rreqTransStatus').value = 'NULL_VALUE'
-        } else if (['C', 'D'].includes(randomStatus)) {
-          // ares_transStatus 是 'C', 'D' 時，rreq_transStatus 可能是 Y 或 N
-          const randomRreqStatus = Math.random() < 0.8 ? 'Y' : 'N'
-          document.getElementById('rreqTransStatus').value = randomRreqStatus
-        }
 
         // 根據業務規則設置 transStatusReason
         if (randomStatus === 'R') {
