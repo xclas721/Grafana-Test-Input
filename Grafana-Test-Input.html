@@ -4,602 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ACS 測試數據插入工具</title>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        padding: 20px;
-      }
-
-      .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-      }
-
-      .form-container {
-        padding: 40px;
-      }
-
-      .form-section {
-        margin-bottom: 40px;
-        border: 1px solid #e0e0e0;
-        border-radius: 10px;
-        padding: 25px;
-        background: #fafafa;
-      }
-
-      .form-section h3 {
-        color: #2c3e50;
-        margin-bottom: 20px;
-        font-size: 1.3em;
-        border-bottom: 2px solid #3498db;
-        padding-bottom: 10px;
-      }
-
-      .form-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
-      }
-
-      .form-group {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .form-group label {
-        font-weight: 600;
-        color: #34495e;
-        margin-bottom: 8px;
-        font-size: 0.9em;
-      }
-
-      .form-group input,
-      .form-group select {
-        padding: 12px;
-        border: 2px solid #ddd;
-        border-radius: 8px;
-        font-size: 14px;
-        transition: border-color 0.3s ease;
-      }
-
-      .form-group input:focus,
-      .form-group select:focus {
-        outline: none;
-        border-color: #3498db;
-        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-      }
-
-      .form-group small {
-        color: #7f8c8d;
-        margin-top: 5px;
-        font-size: 0.8em;
-      }
-
-      .button-group {
-        display: flex;
-        gap: 15px;
-        justify-content: center;
-        margin-top: 30px;
-      }
-
-      .btn {
-        padding: 15px 30px;
-        border: none;
-        border-radius: 8px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-
-      .btn-primary {
-        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-        color: white;
-      }
-
-      .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
-      }
-
-      .btn-secondary {
-        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
-        color: white;
-      }
-
-      .btn-secondary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(149, 165, 166, 0.3);
-      }
-
-      .btn-success {
-        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
-        color: white;
-      }
-
-      .btn-success:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(39, 174, 96, 0.3);
-      }
-
-      .response-area {
-        margin-top: 30px;
-        padding: 20px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        border-left: 4px solid #3498db;
-      }
-
-      .response-area h4 {
-        color: #2c3e50;
-        margin-bottom: 15px;
-      }
-
-      .response-content {
-        background: #2c3e50;
-        color: #ecf0f1;
-        padding: 15px;
-        border-radius: 5px;
-        font-family: 'Courier New', monospace;
-        font-size: 12px;
-        white-space: pre-wrap;
-        max-height: 300px;
-        overflow-y: auto;
-      }
-
-      .loading {
-        display: none;
-        text-align: center;
-        padding: 20px;
-      }
-
-      .spinner {
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #3498db;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 10px;
-      }
-
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-
-      .status-message {
-        padding: 15px;
-        border-radius: 8px;
-        margin: 15px 0;
-        font-weight: 600;
-      }
-
-      .status-success {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-      }
-
-      .status-error {
-        background: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-      }
-
-      .status-warning {
-        background: #fff3cd;
-        color: #856404;
-        border: 1px solid #ffeaa7;
-      }
-
-      .status-info {
-        background: #d1ecf1;
-        color: #0c5460;
-        border: 1px solid #bee5eb;
-      }
-
-      /* 增強的通知系統 */
-      .notification-panel {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        width: 400px;
-        max-height: 80vh;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        z-index: 1000;
-        overflow: hidden;
-        display: none;
-      }
-
-      .notification-header {
-        background: #2c3e50;
-        color: white;
-        padding: 15px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .notification-title {
-        font-weight: 600;
-        font-size: 16px;
-      }
-
-      .notification-close {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 20px;
-        cursor: pointer;
-        padding: 0;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        transition: background 0.3s ease;
-      }
-
-      .notification-close:hover {
-        background: rgba(255, 255, 255, 0.2);
-      }
-
-      .notification-content {
-        max-height: 60vh;
-        overflow-y: auto;
-        padding: 0;
-      }
-
-      .progress-section {
-        padding: 20px;
-        border-bottom: 1px solid #e9ecef;
-      }
-
-      .progress-bar-container {
-        background: #e9ecef;
-        border-radius: 10px;
-        height: 20px;
-        overflow: hidden;
-        margin: 10px 0;
-      }
-
-      .progress-bar {
-        height: 100%;
-        background: linear-gradient(90deg, #28a745, #20c997);
-        border-radius: 10px;
-        transition: width 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 12px;
-        font-weight: 600;
-      }
-
-      .progress-text {
-        display: flex;
-        justify-content: space-between;
-        font-size: 14px;
-        margin-bottom: 10px;
-      }
-
-      .stats-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin-top: 15px;
-      }
-
-      .stat-item {
-        text-align: center;
-        padding: 10px;
-        border-radius: 8px;
-        background: #f8f9fa;
-      }
-
-      .stat-number {
-        font-size: 24px;
-        font-weight: bold;
-        color: #2c3e50;
-      }
-
-      .stat-label {
-        font-size: 12px;
-        color: #6c757d;
-        margin-top: 5px;
-      }
-
-      .log-section {
-        padding: 20px;
-      }
-
-      .log-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-      }
-
-      .log-toggle {
-        background: #6c757d;
-        color: white;
-        border: none;
-        padding: 5px 10px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 12px;
-      }
-
-      .log-content {
-        max-height: 200px;
-        overflow-y: auto;
-        background: #f8f9fa;
-        border-radius: 5px;
-        padding: 10px;
-        font-family: 'Courier New', monospace;
-        font-size: 12px;
-        line-height: 1.4;
-      }
-
-      .log-entry {
-        margin-bottom: 5px;
-        padding: 2px 0;
-      }
-
-      .log-entry.success {
-        color: #28a745;
-      }
-
-      .log-entry.error {
-        color: #dc3545;
-      }
-
-      .log-entry.info {
-        color: #17a2b8;
-      }
-
-      .log-entry.warning {
-        color: #ffc107;
-      }
-
-      .error-details {
-        margin-top: 15px;
-        padding: 15px;
-        background: #f8d7da;
-        border-radius: 5px;
-        border-left: 4px solid #dc3545;
-      }
-
-      .error-summary {
-        font-weight: 600;
-        margin-bottom: 10px;
-        color: #721c24;
-      }
-
-      .error-list {
-        max-height: 150px;
-        overflow-y: auto;
-        font-size: 12px;
-      }
-
-      .error-item {
-        padding: 5px 0;
-        border-bottom: 1px solid #f5c6cb;
-      }
-
-      .error-item:last-child {
-        border-bottom: none;
-      }
-
-      .notification-minimize {
-        position: absolute;
-        top: 10px;
-        right: 50px;
-        background: none;
-        border: none;
-        color: white;
-        font-size: 16px;
-        cursor: pointer;
-        padding: 5px;
-        border-radius: 3px;
-        transition: background 0.3s ease;
-      }
-
-      .notification-minimize:hover {
-        background: rgba(255, 255, 255, 0.2);
-      }
-
-      .notification-minimized {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #dc3545;
-        color: white;
-        font-weight: bold;
-        cursor: pointer;
-        position: relative;
-      }
-
-      .notification-minimized .badge {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        background: #ffc107;
-        color: #000;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 10px;
-        font-weight: bold;
-      }
-
-      .quick-actions {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-      }
-
-      .quick-btn {
-        padding: 8px 16px;
-        background: #ecf0f1;
-        border: 1px solid #bdc3c7;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 12px;
-        transition: all 0.3s ease;
-      }
-
-      .quick-btn:hover {
-        background: #d5dbdb;
-      }
-
-      .quick-btn.btn-primary {
-        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
-        color: white !important;
-        border: 1px solid #2980b9 !important;
-      }
-
-      .batch-container {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        margin-left: 10px;
-        background: #f8f9fa;
-        padding: 8px 12px;
-        border-radius: 6px;
-        border: 1px solid #dee2e6;
-      }
-
-      .batch-input {
-        width: 80px;
-        padding: 6px 8px;
-        border: 1px solid #bdc3c7;
-        border-radius: 4px;
-        text-align: center;
-        font-size: 12px;
-      }
-
-      .btn-success {
-        background: linear-gradient(135deg, #27ae60 0%, #229954 100%) !important;
-        color: white !important;
-        border: 1px solid #229954 !important;
-      }
-
-      .btn-success:hover {
-        background: linear-gradient(135deg, #229954 0%, #1e8449 100%) !important;
-        transform: translateY(-1px);
-        box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
-      }
-      .quick-btn.btn-primary:hover {
-        background: linear-gradient(135deg, #2980b9 0%, #1f5f8b 100%) !important;
-        transform: translateY(-1px);
-        box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
-      }
-
-      .mode-switch-container {
-        background: #f8f9fa;
-        padding: 20px;
-        text-align: center;
-        border-bottom: 1px solid #e9ecef;
-      }
-      .mode-switch {
-        display: flex;
-        gap: 10px;
-        margin-top: 15px;
-        justify-content: center;
-      }
-
-      .mode-btn {
-        padding: 8px 20px;
-        border: 2px solid #3498db;
-        background: transparent;
-        color: #3498db;
-        border-radius: 25px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-
-      .mode-btn.active {
-        background: #3498db;
-        color: white;
-        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-      }
-
-      .mode-btn:hover:not(.active) {
-        background: rgba(52, 152, 219, 0.1);
-        transform: translateY(-1px);
-      }
-
-      .mode-indicator {
-        display: inline-block;
-        margin-left: 10px;
-        padding: 4px 8px;
-        background: #e74c3c;
-        color: white;
-        border-radius: 12px;
-        font-size: 10px;
-        font-weight: bold;
-      }
-
-      .mode-indicator.acs {
-        background: #e74c3c;
-      }
-
-      .mode-indicator.unified {
-        background: #9b59b6;
-      }
-      .mode-indicator.dss {
-        background: #27ae60;
-      }
-      .bilingual-label {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-
-      .bilingual-label .en {
-        font-size: 0.8em;
-        color: #7f8c8d;
-        font-weight: 400;
-      }
-
-      .bilingual-label .zh {
-        font-weight: 600;
-        color: #34495e;
-      }
-    </style>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="container">
@@ -736,7 +141,7 @@
                 <input
                   type="text"
                   id="issuerOid"
-                  value="ed8544c4-fc50-289d-ee05-ee41c86bb6f5"
+                  value="06b4b203-da05-73f9-256f-454929df6076"
                   required
                 />
               </div>
@@ -1385,6 +790,64 @@
                   >
                 </div>
                 <small style="color: red">可隨機生成，預設關閉</small>
+              </div>
+              <div class="form-group">
+                <label for="threeDSRequestorChallengeInd" class="bilingual-label">
+                  <span class="zh">3DS 請求方挑戰指標</span>
+                  <span class="en">threeDSRequestorChallengeInd</span>
+                </label>
+                <select id="threeDSRequestorChallengeInd" required>
+                  <option value="01" selected>01 = No preference</option>
+                  <option value="02">02 = No challenge requested</option>
+                  <option value="03">03 = Challenge requested: 3DS Requestor Preference</option>
+                  <option value="04">04 = Challenge requested: Mandate</option>
+                  <option value="05">
+                    05 = No challenge requested (transactional risk analysis is already performed)
+                  </option>
+                  <option value="06">06 = No challenge requested (Data share only)</option>
+                  <option value="07">
+                    07 = No challenge requested (strong consumer authentication is already
+                    performed)
+                  </option>
+                  <option value="08">
+                    08 = No challenge requested (utilise Trust List exemption if no challenge
+                    required)
+                  </option>
+                  <option value="09">
+                    09 = Challenge requested (Trust List prompt requested if challenge required)
+                  </option>
+                  <option value="10">
+                    10 = No challenge requested (utilise low value exemption)
+                  </option>
+                  <option value="11">
+                    11 = No challenge requested (Secure corporate payment exemption)
+                  </option>
+                  <option value="12">
+                    12 = Challenge requested (Device Binding prompt requested if challenge required)
+                  </option>
+                  <option value="13">13 = Challenge requested (Issuer requested)</option>
+                  <option value="14">
+                    14 = Challenge requested (Merchant initiated transactions)
+                  </option>
+                  <option value="80">
+                    80 = (Visa) Remove specified VMID+PAN from Trusted Listing database
+                  </option>
+                  <option value="82">
+                    82 = (Visa) NO CHALLENGE REQUESTED. Secure Corporate Exemption
+                  </option>
+                </select>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px">
+                  <input
+                    type="checkbox"
+                    id="enableThreeDSRequestorChallengeInd"
+                    style="margin: 0"
+                  />
+                  <label
+                    for="enableThreeDSRequestorChallengeInd"
+                    style="margin: 0; font-weight: normal; color: #7f8c8d; font-size: 0.9em"
+                    >隨機生成時包含此欄位（Visa 才會隨機到 80/82）</label
+                  >
+                </div>
               </div>
               <div class="form-group">
                 <label for="authenticationMethod" class="bilingual-label">
@@ -2516,7 +1979,7 @@
 
           // 為每筆數據生成一次 Mastercard 擴展數據
           let mastercardData = null
-          
+
           // 檢查是否啟用 Mastercard 擴展
           if (baseFormData.enableMastercardExtension === 'on') {
             // 如果啟用了隨機生成，則生成隨機數據
@@ -2535,12 +1998,12 @@
           const aresStatus = generateRealisticStatus()
           let rreqStatus = 'NULL_VALUE'
           let transStatus = aresStatus
-          
+
           // 根據業務規則設置相關欄位
           if (['C', 'D'].includes(aresStatus)) {
             // 挑戰認證流程：有 rreq 結果，且 transStatus = rreq 結果
             rreqStatus = Math.random() < 0.8 ? 'Y' : 'N'
-            transStatus = rreqStatus  // 最終狀態 = 挑戰結果
+            transStatus = rreqStatus // 最終狀態 = 挑戰結果
           } else {
             // 無摩擦認證流程：無 rreq，transStatus = ares 狀態
             rreqStatus = 'NULL_VALUE'
@@ -3546,7 +3009,7 @@
         document.getElementById('mastercardReasonCode2').value = ''
         document.getElementById('mastercardStatus').value = 'success'
         document.getElementById('visaRiskBasedAuthenticationScore').value = ''
-        
+
         // 更新 Mastercard 擴展容器顯示狀態
         document.getElementById('mastercardExtensionContainer').style.display = 'none'
 
@@ -3586,7 +3049,7 @@
         const statuses = ['Y', 'N', 'C', 'D', 'R', 'A', 'I', 'S', 'U']
         const randomStatus = statuses[Math.floor(Math.random() * statuses.length)]
         document.getElementById('aresTransStatus').value = randomStatus
-        
+
         // transStatus 的值取決於 ares_transStatus
         if (['C', 'D'].includes(randomStatus)) {
           // C/D 時，會有 rreq_transStatus，且 transStatus = rreq_transStatus
@@ -3617,6 +3080,35 @@
           document.getElementById('deviceChannel').value = randomDeviceChannel
         }
 
+        // 隨機 threeDSRequestorChallengeInd - 只有勾選時才隨機生成
+        const enableCiRandom = document.getElementById('enableThreeDSRequestorChallengeInd').checked
+        if (enableCiRandom) {
+          const cardScheme = document.getElementById('cardScheme').value
+          // 基礎清單（非 Visa）
+          let cis = [
+            '01',
+            '02',
+            '03',
+            '04',
+            '05',
+            '06',
+            '07',
+            '08',
+            '09',
+            '10',
+            '11',
+            '12',
+            '13',
+            '14'
+          ]
+          // Visa 才能包含 80/82
+          if (cardScheme === 'V') {
+            cis = cis.concat(['80', '82'])
+          }
+          const randomCi = cis[Math.floor(Math.random() * cis.length)]
+          document.getElementById('threeDSRequestorChallengeInd').value = randomCi
+        }
+
         // 隨機 acquirerMerchantId (1-9999999) - 只有勾選時才隨機生成
         const enableAcquirerMerchantIdRandom = document.getElementById(
           'enableAcquirerMerchantIdRandom'
@@ -3625,7 +3117,6 @@
           const randomAcquirerMerchantId = Math.floor(Math.random() * 9999999) + 1
           document.getElementById('acquirerMerchantId').value = randomAcquirerMerchantId.toString()
         }
-
 
         // 根據業務規則設置 transStatusReason
         if (randomStatus === 'R') {
@@ -3890,7 +3381,7 @@
           cardbin6: data.cardbin6,
           transStatusReason:
             data.transStatusReason === 'NULL_VALUE' ? 'NULL_VALUE' : data.transStatusReason,
-          acquirerMerchantID: data.acquirerMerchantId,
+          acquirerMerchantID: String(data.acquirerMerchantId),
           exchangeKey: `${data.currencyCodeForRate}-${currentDateTime.split('T')[0]}`,
           errorDetail: data.errorDetail === 'NULL_VALUE' ? 'NULL_VALUE' : data.errorDetail,
           purchaseCurrencyStr: data.purchaseCurrency,
@@ -3944,6 +3435,7 @@
             data.rreqTransStatus === 'NULL_VALUE' ? 'NULL_VALUE' : data.rreqTransStatus,
           authenticationType:
             data.authenticationType === 'NULL_VALUE' ? 'NULL_VALUE' : data.authenticationType,
+          threedsRequestorChlgInd: data.threeDSRequestorChallengeInd,
           ares_transStatus: data.aresTransStatus,
           acctNumberMask: data.acctNumberMask
         }
@@ -4108,7 +3600,7 @@
           cardbin6: data.cardbin6,
           transStatusReason:
             data.transStatusReason === 'NULL_VALUE' ? 'NULL_VALUE' : data.transStatusReason,
-          acquirerMerchantID: data.acquirerMerchantId,
+          acquirerMerchantID: String(data.acquirerMerchantId),
           exchangeKey: `${data.currencyCodeForRate}-${currentDateTime.split('T')[0]}`,
           errorDetail: data.errorDetail === 'NULL_VALUE' ? 'NULL_VALUE' : data.errorDetail,
           purchaseCurrencyStr: data.purchaseCurrency,
@@ -4162,6 +3654,8 @@
             data.rreqTransStatus === 'NULL_VALUE' ? 'NULL_VALUE' : data.rreqTransStatus,
           authenticationType:
             data.authenticationType === 'NULL_VALUE' ? 'NULL_VALUE' : data.authenticationType,
+          threedsRequestorChlgInd: data.threeDSRequestorChallengeInd,
+          threedsRequestorChlgInd: data.threeDSRequestorChallengeInd,
           ares_transStatus: data.aresTransStatus,
           acctNumberMask: data.acctNumberMask
         }
